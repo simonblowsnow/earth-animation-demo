@@ -19,6 +19,7 @@ export default {
   },
   methods: {
     init () {
+      
       this.graph = new GraphEarth("main");
     }
   }

@@ -12,20 +12,21 @@ class GraphEarth {
         this.graticule = null;
         this.scale = 200;
         this.scaleE = 120;
-        this.size = {width: 1000, height: 650};
+        this.size = {width: 1000, height: 750};
         this.origin = {x: -90, y: -25};
         this.index = 0;
         
         this.init();
         this.loadWorld();
 
+        this.transition();
         // this.run();
-        this.play();
+        // this.play();
     }
 
     init() {
         let scale = this.scale = 200;
-        this.origin = { x: -50, y: -25 }; // x: -90, y: -25
+        this.origin = { x: -50, y: 0 }; // x: -90, y: -25
         let [width, height] = [this.size.width, this.size.height];
 
         // TODO: 自动获取div尺寸
@@ -57,19 +58,20 @@ class GraphEarth {
                 .datum(world)
                 .attr("class", "land")
                 .attr("d", $this.geoPath);   
+            
         });
     }
 
     // 设置投影
     setProjection (style) {
         if (style) {
-            this.projection = d3.geoEqualEarth().rotate([-10, 0]).scale(this.scaleE);
+            this.projection = d3.geoEqualEarth().rotate([-146, 0]).scale(this.scaleE).center([0, 40]); // -10
         } else {
             this.projection = d3.geoOrthographic()
                 .scale(this.scale)
                 .translate([this.size.width / 2, this.size.height / 2])
                 .rotate([this.origin.x, this.origin.y])
-                .center([0, 0])
+                .center([0, 10])
                 .clipAngle(90);
         }
         return this.projection;
@@ -93,6 +95,69 @@ class GraphEarth {
 
     }
 
+    transition () {
+        // this._transition();
+        setTimeout(() => {
+            this.demo1();
+            // this._transition();
+        }, 2000);
+    }
+
+    demo1 () {
+        // motions
+        setTimeout(() => {
+            this._transition();
+        }, 2000);
+        // let m = this.motionZoom();
+        // m.on('end', () => {
+        //     this._transition();
+        // });
+
+    }
+
+    _transition () {
+        let $this = this;
+        $this.setProjection(1);
+        // this.projection = d3.geoEqualEarth().rotate([-10, 0]).scale(this.scaleE);
+        this.loadGeo();
+
+        // this.geoPath = d3.geoPath().projection(this.projection);
+        // // 创建地球网格
+
+        $this.group.selectAll(".graticule") // graticule land
+            .style('stroke-opacity', '.1')
+            .transition()
+            .duration(2000)
+            .style('stroke-opacity', '.3')
+            
+            .attr("d", $this.geoPath);
+        
+        $this.group.selectAll(".land") // graticule land
+            .style('stroke-opacity', '.1')
+            .transition()
+            .duration(2000)
+            .style('stroke-opacity', '.8')
+            .style('fill', '#ccc')
+            .attr("d", $this.geoPath);
+        
+    }
+
+    motionZoom () {
+        let $this = this;
+        let tarOrigin = [-120, 0], tarScale = 260, tarScaleE = 175; // -35
+        let scaleI = d3.interpolateNumber(this.scale, tarScale);
+        let originI = d3.interpolateNumberArray([this.origin.x, this.origin.y], tarOrigin);
+        return d3.transition()
+            .duration(2050)
+            .ease(d3.easeLinear)
+            .tween("render", () => t => {
+                let o = originI(t);
+                $this.projection.rotate([o[0], o[1], 0]).scale(scaleI(t));
+                $this.update();
+            });
+    }
+
+
     play () {
         let $this = this;
         let tarOrigin = [-120, -35], tarScale = 260, tarScaleE = 175;
@@ -105,7 +170,7 @@ class GraphEarth {
             $this.changeProjection();
             initProjE = false;
             d3.transition()
-                .duration(1050)
+                .duration(2050)
                 .ease(d3.easeLinear)
                 .tween("render", () => t => {
                     let o = originI(t);
@@ -113,7 +178,7 @@ class GraphEarth {
                     $this.update();
                 })
                 .transition()
-                .duration(1500)
+                .duration(2500)
                 .ease(d3.easeBack)
                 .tween("render", () => t => {
                     if (!initProjE) initProjE = $this.changeProjection(1);
